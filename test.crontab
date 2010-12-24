@@ -1,0 +1,5 @@
+# Test cron tab
+
+* * * * * echo -n "Hello! " && date
+36 * * * * echo "Specific minute"
+@weekly echo "New week"
