@@ -14,14 +14,14 @@ classifiers = [
     'License :: OSI Approved :: GNU General Public License (GPL)',
     'Operating System :: OS Independent']
 
-setup(name='devcron',
-      version='0.1',
-      py_modules=['devcron'],
-      classifiers=classifiers,
-      description='Cron for developing projects that use crontabs.',
-      long_description=long_description,
-      author='Daniel Benamy',
+setup(author='Daniel Benamy',
       author_email='dbenamy@igicom.com',
+      classifiers=classifiers,
+      description='Cron for working on projects that use crontabs.',
+      long_description=long_description,
+      name='devcron',
+      py_modules=['devcron'],
+      scripts=['devcron.py'],
       url='https://bitbucket.org/dbenamy/devcron/',
-      license='MIT',
+      version='0.1',
      )
