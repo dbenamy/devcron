@@ -17,8 +17,12 @@ import time
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
-    crontab_data = open(sys.argv[1]).read()
+    log_level = logging.WARN
+    if '-v' in sys.argv:
+        log_level = logging.DEBUG
+    logging.basicConfig(level=log_level)
+    
+    crontab_data = open(sys.argv[-1]).read()
     events = parse_crontab(crontab_data)
     logging.debug("Parsed crontab as:\n%s" %
                   '\n'.join([str(e) for e in events]))
@@ -144,18 +148,19 @@ class Cron(object):
         self.events = events
 
     def run(self):
-        t = datetime(*datetime.now().timetuple()[:5])
+        next_event = datetime(*datetime.now().timetuple()[:5])
         while True:
             for e in self.events:
-                e.check(t)
+                e.check(next_event)
             
-            t += timedelta(minutes=1)
-            while datetime.now() < t:
-                now = datetime.now()
-                dt = t - now
+            next_event += timedelta(minutes=1)
+            now = datetime.now()
+            while now < next_event:
+                dt = next_event - now
                 secs = dt.seconds + float(dt.microseconds) / 1000000
-                logging.debug("Sleeping from %s to %s (%s secs)" % (now, t, secs))
+                logging.debug("Sleeping from %s to %s (%s secs)" % (now, next_event, secs))
                 time.sleep(secs)
+                now = datetime.now()
 
 
 if __name__ == '__main__':
