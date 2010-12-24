@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-"""Simple cron implementation in python.
+"""Simple cron implementation in python. Intended as a debugging tool when
+developing anything cron based where it would be difficult to use normal cron.
 
-Usage: cron.py <crontab>
+Usage: cron.py [-v] <crontab>
 
 """
 # Based on Brian's answer in
