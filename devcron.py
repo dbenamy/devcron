@@ -93,17 +93,23 @@ def parse_arg(arg, converter=None):
     it.
     
     """
-    try:
-        num = int(arg)
-        if converter:
-            num = converter(num)
-        return num
-    except ValueError:
-        pass
     if arg == '*':
         return all_match
-    raise NotImplementedError("The crontab line is malformed or isn't "
-                              "supported.")
+    nums = None
+    try:
+        nums = [int(arg)]
+    except ValueError:
+        pass
+    try:
+        nums = [int(n) for n in arg.split(',')]
+    except ValueError:
+        pass
+    if not nums:
+        raise NotImplementedError("The crontab line is malformed or isn't "
+                                  "supported.")
+    if converter:
+        nums = [converter(n) for n in nums]
+    return nums
 
 
 class AllMatch(set):
