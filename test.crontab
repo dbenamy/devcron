@@ -3,3 +3,6 @@
 * * * * * echo -n "Hello! " && date
 36 * * * * echo "Specific minute"
 @weekly echo "New week"
+0 0 0 0 0 echo "Sun at midnight"
+0 0 0 0 7 echo "Sun at midnight"
+06 20 * * 4 echo "NOW"

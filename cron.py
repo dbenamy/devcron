@@ -2,10 +2,11 @@
 
 """Simple cron implementation in python.
 
-Based on Brian's answer in
-http://stackoverflow.com/questions/373335/suggestions-for-a-cron-like-scheduler-in-python
+Usage: cron.py <crontab>
 
 """
+# Based on Brian's answer in
+# http://stackoverflow.com/questions/373335/suggestions-for-a-cron-like-scheduler-in-python
 
 
 from datetime import datetime, timedelta
@@ -41,9 +42,13 @@ def parse_crontab(data):
                 raise NotImplementedError() # TODO
         else:
             chunks = line.split(None, 5)
-            args = [parse_arg(a) for a in chunks[:5]]
-            event = Event(make_cmd_runner(chunks[5]), args[0], args[1],
-                          args[2], args[3], args[4])
+            event = Event(make_cmd_runner(chunks[5]),
+                          parse_arg(chunks[0]),
+                          parse_arg(chunks[1]),
+                          parse_arg(chunks[2]),
+                          parse_arg(chunks[3]),
+                          parse_arg(chunks[4],
+                                    lambda dow: 7 if dow == 0 else dow))
         events.append(event)
     return events
 
@@ -60,13 +65,19 @@ def make_cmd_runner(cmd):
     return r
 
 
-def parse_arg(arg):
+def parse_arg(arg, converter=None):
     """Takes a crontab time arg and converts it to a python int, iterable, or
     set.
     
+    If a callable is passed as converter, numbers will be translated through
+    it.
+    
     """
     try:
-        return(int(arg))
+        num = int(arg)
+        if converter:
+            num = converter(num)
+        return num
     except ValueError:
         pass
     if arg == '*':
@@ -96,6 +107,11 @@ class Event(object):
     def __init__(self, action, min=all_match, hour=all_match,
                        day=all_match, month=all_match, dow=all_match,
                        args=(), kwargs={}):
+        """
+        day: 1 - num days
+        month: 1 - 12
+        dow: mon = 1, sun = 7
+        """
         self.mins = conv_to_set(min)
         self.hours= conv_to_set(hour)
         self.days = conv_to_set(day)
@@ -107,11 +123,11 @@ class Event(object):
 
     def matchtime(self, t):
         """Return True if this event should trigger at the specified datetime"""
-        return ((t.minute     in self.mins) and
-                (t.hour       in self.hours) and
-                (t.day        in self.days) and
-                (t.month      in self.months) and
-                (t.weekday()  in self.dow))
+        return ((t.minute        in self.mins) and
+                (t.hour          in self.hours) and
+                (t.day           in self.days) and
+                (t.month         in self.months) and
+                (t.isoweekday()  in self.dow))
 
     def check(self, t):
         if self.matchtime(t):
