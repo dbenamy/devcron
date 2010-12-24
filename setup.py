@@ -23,5 +23,5 @@ setup(author='Daniel Benamy',
       py_modules=['devcron'],
       scripts=['devcron.py'],
       url='https://bitbucket.org/dbenamy/devcron/',
-      version='0.1',
+      version='0.2',
      )
