@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Usage: cron.py [-v] <crontab>
+"""Usage: devcron.py [-v] <crontab>
 
 Development cron daemon. Intended as a debugging tool when developing
 anything cron based where it would be difficult to use normal cron or what cron
@@ -16,7 +16,7 @@ of the commands. The crontab looks something like:
 
 That works normally on the production server and when I'm working, I run:
 
-cron.py my-crontab
+devcron.py my-crontab
 
 and it will run update-stats.py in the working directory (my development tree)
 once a minute.
