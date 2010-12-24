@@ -16,3 +16,9 @@ devcron.py my-crontab
 
 and it will run update-stats.py in the working directory (my development tree)
 once a minute.
+
+
+
+You can install with:
+
+pip install -e hg+https://bitbucket.org/dbenamy/devcron#egg=devcron
