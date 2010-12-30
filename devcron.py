@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Usage: devcron.py [-v] <crontab>
+USAGE = """Usage: devcron.py [-v] <crontab>
 
 See README.txt for more info.
 
@@ -17,11 +17,14 @@ import time
 
 
 def main():
+    if len(sys.argv) == 1:
+        print USAGE
+        return
     log_level = logging.WARN
     if '-v' in sys.argv:
         log_level = logging.DEBUG
     logging.basicConfig(level=log_level)
-    
+
     crontab_data = open(sys.argv[-1]).read()
     crontab_data = edit_crontab_data(crontab_data)
     logging.debug("Edited crontab looks like:\n%s\n" % crontab_data)
@@ -35,11 +38,12 @@ def main():
 def edit_crontab_data(data):
     deletions = []
     for line in data.splitlines():
-        if line.startswith('# devcron delete '):
+        delete_cmd = '# devcron delete_str '
+        if line.startswith(delete_cmd):
             if line[-1] == ' ':
                 logging.warn("There is a significant trailing space on line "
                              "'%s'." % line)
-            deletions.append(line[17:])
+            deletions.append(line[len(delete_cmd):])
     logging.debug("Deleting the following strings: %s\n" % deletions)
     for d in deletions:
         data = data.replace(d, '')
@@ -76,40 +80,33 @@ def parse_crontab(data):
 def make_cmd_runner(cmd):
     """Takes a path to a cmd and returns a function that when called, will run
     it.
-    
+
     """
     def run_cmd():
         Popen(cmd, shell=True, close_fds=True)
-    r = run_cmd
-    r.__doc__ = cmd
-    return r
+    run_cmd.__doc__ = cmd
+    return run_cmd
 
 
-def parse_arg(arg, converter=None):
-    """Takes a crontab time arg and converts it to a python int, iterable, or
-    set.
-    
-    If a callable is passed as converter, numbers will be translated through
-    it.
-    
+def no_change(x):
+    return x
+
+
+def parse_arg(arg, converter=no_change):
+    """This takes a crontab time arg and converts it to a python int, iterable,
+    or set.
+
+    If a callable is passed as converter, it translates numbers in arg with
+    the converter.
+
     """
     if arg == '*':
         return all_match
-    nums = None
     try:
-        nums = [int(arg)]
+        return [converter(int(n)) for n in arg.split(',')]
     except ValueError:
-        pass
-    try:
-        nums = [int(n) for n in arg.split(',')]
-    except ValueError:
-        pass
-    if not nums:
         raise NotImplementedError("The crontab line is malformed or isn't "
                                   "supported.")
-    if converter:
-        nums = [converter(n) for n in nums]
-    return nums
 
 
 class AllMatch(set):
@@ -120,15 +117,14 @@ class AllMatch(set):
 all_match = AllMatch()
 
 
-def conv_to_set(obj):  # Allow single integer to be provided
+def convert_to_set(obj):
     if isinstance(obj, (int,long)):
-        return set([obj])  # Single item
+        return set([obj])
     if not isinstance(obj, set):
         obj = set(obj)
     return obj
 
 
-# The actual Event class
 class Event(object):
     def __init__(self, action, min=all_match, hour=all_match,
                        day=all_match, month=all_match, dow=all_match,
@@ -138,11 +134,11 @@ class Event(object):
         month: 1 - 12
         dow: mon = 1, sun = 7
         """
-        self.mins = conv_to_set(min)
-        self.hours= conv_to_set(hour)
-        self.days = conv_to_set(day)
-        self.months = conv_to_set(month)
-        self.dow = conv_to_set(dow)
+        self.mins = convert_to_set(min)
+        self.hours= convert_to_set(hour)
+        self.days = convert_to_set(day)
+        self.months = convert_to_set(month)
+        self.dow = convert_to_set(dow)
         self.action = action
         self.args = args
         self.kwargs = kwargs
@@ -158,7 +154,7 @@ class Event(object):
     def check(self, t):
         if self.matchtime(t):
             self.action(*self.args, **self.kwargs)
-    
+
     def __str__(self):
         return ("Event(%s, %s, %s, %s, %s, %s)" %
                 (self.mins, self.hours, self.days, self.months, self.dow,
@@ -174,7 +170,7 @@ class Cron(object):
         while True:
             for e in self.events:
                 e.check(next_event)
-            
+
             next_event += timedelta(minutes=1)
             now = datetime.now()
             while now < next_event:

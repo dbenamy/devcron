@@ -7,7 +7,7 @@ crontab is in the source tree so it can be managed and deployed with the code.
 While doing dev work, I need to run the cron tasks locally and modify the path
 of the commands. The crontab looks something like:
 
-# devcron delete /usr/local/bin/
+# devcron delete_str /usr/local/bin/
 * * * * * /usr/local/bin/update-stats.py
 
 That works normally on the production server and when I'm working, I run:
