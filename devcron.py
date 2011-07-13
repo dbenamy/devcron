@@ -1,31 +1,40 @@
 #!/usr/bin/env python
 
-USAGE = """Usage: devcron.py [-v] <crontab>
-
-See README.txt for more info.
-
-"""
 # Uses Brian's python cron code from
 # http://stackoverflow.com/questions/373335/suggestions-for-a-cron-like-scheduler-in-python
 
 
 from datetime import datetime, timedelta
 import logging
+import optparse
 from subprocess import Popen
 import sys
 import time
 
 
 def main():
-    if len(sys.argv) == 1:
-        print USAGE
-        return
+    prog = 'devcron.py'
+    usage = 'usage: %prog [options] crontab'
+    description = 'A development cron daemon. See README.txt for more info.'
+
+    op = optparse.OptionParser(prog=prog, usage=usage, description=description)
+    op.add_option('-v', '--verbose', dest='verbose', action='store_true',
+	              help='verbose logging.')
+
+    (options, args) = op.parse_args()
+
+    if len(args) != 1:
+        op.print_help()
+        sys.exit(1)
+
     log_level = logging.WARN
-    if '-v' in sys.argv:
+    if options.verbose:
         log_level = logging.DEBUG
+
     logging.basicConfig(level=log_level)
 
-    crontab_data = open(sys.argv[-1]).read()
+    crontab_data = open(args[0]).read()
+    crontab_data = fold_crontab_lines(crontab_data)
     crontab_data = edit_crontab_data(crontab_data)
     logging.debug("Edited crontab looks like:\n%s\n" % crontab_data)
     events = parse_crontab(crontab_data)
@@ -33,6 +42,10 @@ def main():
                   '\n'.join([str(e) for e in events]))
     cron = Cron(events)
     cron.run()
+
+
+def fold_crontab_lines(data):
+    return data.replace('\\\n', '')
 
 
 def edit_crontab_data(data):
@@ -83,7 +96,7 @@ def make_cmd_runner(cmd):
 
     """
     def run_cmd():
-        Popen(cmd, shell=True, close_fds=True)
+        return Popen(cmd, shell=True, close_fds=True)
     run_cmd.__doc__ = cmd
     return run_cmd
 
@@ -142,6 +155,7 @@ class Event(object):
         self.action = action
         self.args = args
         self.kwargs = kwargs
+#        self.process = None                    # Current process
 
     def matchtime(self, t):
         """Return True if this event should trigger at the specified datetime"""
@@ -153,7 +167,14 @@ class Event(object):
 
     def check(self, t):
         if self.matchtime(t):
-            self.action(*self.args, **self.kwargs)
+            # Avoid spawning another process if the last run didn't finish yet.
+#            if self.process:
+#                self.process.poll()
+#                if self.process.returncode != None:
+#                    self.process = None
+#                else:
+#                    return
+            self.process = self.action(*self.args, **self.kwargs)
 
     def __str__(self):
         return ("Event(%s, %s, %s, %s, %s, %s)" %
