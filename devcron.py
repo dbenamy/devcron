@@ -15,7 +15,7 @@ import time
 def main():
     prog = 'devcron.py'
     usage = 'usage: %prog [options] crontab'
-    description = 'A development cron daemon. See README.txt for more info.'
+    description = 'A development cron daemon. See README.md for more info.'
 
     op = optparse.OptionParser(prog=prog, usage=usage, description=description)
     op.add_option('-v', '--verbose', dest='verbose', action='store_true',
