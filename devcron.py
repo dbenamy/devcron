@@ -19,7 +19,7 @@ def main():
 
     op = optparse.OptionParser(prog=prog, usage=usage, description=description)
     op.add_option('-v', '--verbose', dest='verbose', action='store_true',
-	              help='verbose logging.')
+                  help='verbose logging.')
 
     (options, args) = op.parse_args()
 
@@ -124,14 +124,15 @@ def parse_arg(arg, converter=no_change):
 
 class AllMatch(set):
     """Universal set - match everything"""
-    def __contains__(self, item): return True
+    def __contains__(self, item):
+        return True
 
 
 all_match = AllMatch()
 
 
 def convert_to_set(obj):
-    if isinstance(obj, (int,long)):
+    if isinstance(obj, (int, long)):
         return set([obj])
     if not isinstance(obj, set):
         obj = set(obj)
@@ -140,15 +141,15 @@ def convert_to_set(obj):
 
 class Event(object):
     def __init__(self, action, min=all_match, hour=all_match,
-                       day=all_match, month=all_match, dow=all_match,
-                       args=(), kwargs={}):
+                 day=all_match, month=all_match, dow=all_match,
+                 args=(), kwargs={}):
         """
         day: 1 - num days
         month: 1 - 12
         dow: mon = 1, sun = 7
         """
         self.mins = convert_to_set(min)
-        self.hours= convert_to_set(hour)
+        self.hours = convert_to_set(hour)
         self.days = convert_to_set(day)
         self.months = convert_to_set(month)
         self.dow = convert_to_set(dow)
