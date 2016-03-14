@@ -4,7 +4,8 @@
 # http://stackoverflow.com/questions/373335/suggestions-for-a-cron-like-scheduler-in-python
 
 
-from datetime import datetime, timedelta
+from datetime import datetime
+import math
 import logging
 import optparse
 from subprocess import Popen
@@ -79,6 +80,8 @@ def parse_crontab(data):
                 raise NotImplementedError() # TODO
         else:
             chunks = line.split(None, 5)
+            if len(chunks) < 6:
+                raise NotImplementedError('The crontab line must have 6 fields')
             event = Event(make_cmd_runner(chunks[5]),
                           parse_arg(chunks[0]),
                           parse_arg(chunks[1]),
@@ -184,23 +187,28 @@ class Event(object):
 
 
 class Cron(object):
+    step = 60
+
     def __init__(self, events):
         self.events = events
 
-    def run(self):
-        next_event = datetime(*datetime.now().timetuple()[:5])
-        while True:
+    def run(self, stop_condition=lambda: False):
+        next_event = math.floor(time.time() / self.step) * self.step
+        while not stop_condition():
             for e in self.events:
-                e.check(next_event)
+                e.check(datetime.fromtimestamp(next_event))
 
-            next_event += timedelta(minutes=1)
-            now = datetime.now()
+            next_event += self.step
+            now = time.time()
             while now < next_event:
                 dt = next_event - now
-                secs = dt.seconds + float(dt.microseconds) / 1000000
-                logging.debug("Sleeping from %s to %s (%s secs)" % (now, next_event, secs))
-                time.sleep(secs)
-                now = datetime.now()
+                logging.debug("Sleeping from %s to %s (%s secs)" % (
+                    datetime.fromtimestamp(now),
+                    datetime.fromtimestamp(next_event),
+                    dt
+                ))
+                time.sleep(dt)
+                now = time.time()
 
 
 if __name__ == '__main__':
