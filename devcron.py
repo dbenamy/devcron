@@ -11,6 +11,7 @@ import optparse
 from subprocess import Popen
 import sys
 import time
+import six
 
 
 def main():
@@ -135,7 +136,7 @@ all_match = AllMatch()
 
 
 def convert_to_set(obj):
-    if isinstance(obj, (int, long)):
+    if isinstance(obj, six.integer_types):
         return set([obj])
     if not isinstance(obj, set):
         obj = set(obj)
