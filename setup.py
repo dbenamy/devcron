@@ -30,7 +30,7 @@ setup(author='Daniel Benamy',
       tests_require=['mock'],
       test_suite='tests',
       url='https://bitbucket.org/dbenamy/devcron/',
-      version='0.2.1',
+      version='0.3',
       entry_points={
           'console_scripts': [
               'devcron=devcron:main',
