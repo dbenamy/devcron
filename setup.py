@@ -27,7 +27,7 @@ setup(author='Daniel Benamy',
       py_modules=['devcron'],
       scripts=['devcron.py'],
       url='https://bitbucket.org/dbenamy/devcron/',
-      version='0.2',
+      version='0.2.1',
       entry_points={
           'console_scripts': [
               'devcron=devcron:main',
