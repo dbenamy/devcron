@@ -12,6 +12,7 @@ from subprocess import Popen
 import sys
 import time
 import six
+import re
 
 
 def main():
@@ -109,6 +110,28 @@ def no_change(x):
     return x
 
 
+_arg_regex = re.compile(r'''(?:
+                              ((?:(?:\d+(?:-\d+)?),?)+)  # numbers and ranges divied by commas (1)
+                              |                          # or
+                              (\*)                       # asterisk (2)
+                            )
+                            (?:/(\d+))?                 # divisor part (3 - number part)
+                            $''',
+                        re.VERBOSE)
+
+def parse_number_or_range(number_or_range):
+    if '-' in number_or_range:
+        start, end = (int(x) for x in number_or_range.split('-', 1))
+        return range(start, end + 1)
+    else:
+        return [int(number_or_range)]
+
+def parse_set_of_ranges(set_of_ranges):
+    values = []
+    for number_or_range in set_of_ranges.split(','):
+        values.extend(parse_number_or_range(number_or_range))
+    return values
+
 def parse_arg(arg, converter=no_change):
     """This takes a crontab time arg and converts it to a python int, iterable,
     or set.
@@ -117,22 +140,33 @@ def parse_arg(arg, converter=no_change):
     the converter.
 
     """
-    if arg == '*':
-        return all_match
-    try:
-        return [converter(int(n)) for n in arg.split(',')]
-    except ValueError:
+    match = _arg_regex.match(arg)
+    if not match:
         raise NotImplementedError("The crontab line is malformed or isn't "
                                   "supported.")
 
+    divisor = int(match.group(3)) if match.group(3) else 1
 
-class AllMatch(set):
-    """Universal set - match everything"""
+    if match.group(2):  # asterisk
+        return DivisableMatch(divisor)
+
+    values = parse_set_of_ranges(match.group(1))
+    return [converter(int(n))
+            for i, n in enumerate(values)
+            if i % divisor == 0]
+
+
+class DivisableMatch(set):
+    """Matches X if (X-offset) % divisor == 0"""
+    def __init__(self, divisor, offset=0):
+        self.divisor = divisor
+        self.offset = offset
+
     def __contains__(self, item):
-        return True
+        return (int(item) - self.offset) % self.divisor == 0
 
 
-all_match = AllMatch()
+all_match = DivisableMatch(1)
 
 
 def convert_to_set(obj):

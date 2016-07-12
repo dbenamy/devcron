@@ -38,7 +38,30 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(len(events), 1)
         e = events[0]
         for x in (e.mins, e.hours, e.days, e.months, e.dow):
-            self.assertIsInstance(x, devcron.AllMatch)
+            self.assertIsInstance(x, devcron.DivisableMatch)
+
+    def test_parse_asterisk_divisor(self):
+        events = devcron.parse_crontab('*/10 * * * * cmd')
+        self.assertEqual(len(events), 1)
+        self.assertIsInstance(events[0].mins, devcron.DivisableMatch)
+        self.assertEqual(events[0].mins.divisor, 10)
+
+    def test_range(self):
+        events = devcron.parse_crontab('1-10 * * * * cmd')
+        self.assertEqual(events[0].mins, set(range(1, 11)))
+
+        events = devcron.parse_crontab('1-10,12 * * * * cmd')
+        self.assertEqual(events[0].mins, set(range(1, 11)).union({12}))
+
+        events = devcron.parse_crontab('1-10,12-20 * * * * cmd')
+        self.assertEqual(events[0].mins, set(range(1, 11)).union(set(range(12, 21))))
+
+    def test_range_with_divisor(self):
+        events = devcron.parse_crontab('1-59/2 * * * * cmd')
+        self.assertEqual(events[0].mins, set(range(1, 60, 2)))
+
+        events = devcron.parse_crontab('1,2,3,5,8,13,21/3 * * * * cmd')
+        self.assertEqual(events[0].mins, {1, 5, 21})
 
     def test_parse_comments(self):
         events = devcron.parse_crontab('* * * * * cmd\n#comment\n1 2 3 4 5 cmd')
@@ -53,8 +76,8 @@ class TestParsing(unittest.TestCase):
         self.assertEqual(len(events), 1)
         e = events[0]
         self.assertEqual((e.mins, e.hours, e.dow), ({0}, {0}, {0}))
-        self.assertIsInstance(e.days, devcron.AllMatch)
-        self.assertIsInstance(e.months, devcron.AllMatch)
+        self.assertIsInstance(e.days, devcron.DivisableMatch)
+        self.assertIsInstance(e.months, devcron.DivisableMatch)
 
     def test_unknown_freq(self):
         with self.assertRaises(NotImplementedError):
@@ -76,7 +99,10 @@ class TestParsing(unittest.TestCase):
 class TestMatching(unittest.TestCase):
 
     def test_all_match(self):
-        self.assertTrue(all(x in devcron.AllMatch() for x in range(366)))
+        self.assertTrue(all(x in devcron.DivisableMatch(1) for x in range(366)))
+        self.assertTrue(all(x in devcron.DivisableMatch(2) for x in range(0, 366, 2)))
+        self.assertTrue(not any(x in devcron.DivisableMatch(2) for x in range(1, 366, 2)))
+        self.assertTrue(all(x in devcron.DivisableMatch(2, 1) for x in range(1, 366, 2)))
 
     def test_simple(self):
         e = devcron.Event(action=None, min={43}, hour={8}, day={14}, month={3}, dow={1})
