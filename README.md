@@ -1,6 +1,6 @@
-Development cron daemon. Intended as a debugging tool when developing anything
-cron based where it would be difficult to use normal cron or when cron runs
-must be modified for the dev environment.
+This is a development cron daemon. It's intended as a debugging tool when
+developing anything cron based where it would be difficult to use normal cron or
+when cron runs must be modified for the dev environment.
 
 For example, I have a django project that uses cron to run periodic tasks. The
 crontab is in the source tree so it can be managed and deployed with the code.
@@ -22,4 +22,4 @@ once a minute.
 
 You can install with:
 
-`pip install -e hg+https://bitbucket.org/dbenamy/devcron#egg=devcron`
+`pip install devcron`
